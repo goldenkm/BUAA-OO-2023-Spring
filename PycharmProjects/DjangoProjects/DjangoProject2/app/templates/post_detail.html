@@ -1,0 +1,144 @@
+{% extends 'post_base.html' %}
+
+{% load static %}
+{% block style %}
+    <style>
+        /* 弹窗样式 */
+        .modal-container {
+            display: none;
+            position: fixed;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 725px;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 关闭按钮样式 */
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block section %}
+    <div class="box">
+        <h1 class="title is-size-5">
+            {{ post.title }}
+        </h1>
+        <div class="is-size-7 has-text-grey-light pt-1 pb-1">
+            <span class="mr-3">作者：{{ post.author.user_name }}</span>
+            <span>发布日期：{{ post.create_time }}</span>
+        </div>
+        <div class="content">
+            {{ post.content|safe }}
+        </div>
+    </div>
+
+    <div class="box">
+        点赞量：{{ like_count }}
+        <form method="post" action="">
+            {% csrf_token %}
+            <button type="submit" class="btn-success">Like</button>
+        </form>
+    </div>
+    <div class="box">
+        <h2>全部评论：</h2>
+        {% if comments %}
+            {% for comment in comments %}
+                <p>{{ comment.author.user_name }}: {{ comment.content }}</p>
+            {% endfor %}
+        {% else %}
+            <p>还没有评论</p>
+        {% endif %}
+    </div>
+
+    <button id="showModalButton" data-toggle="modal" data-target="#commentModal">评论</button>
+
+    <!-- 弹窗代码 -->
+    <div class="modal-container" id="modalContainer">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close-button" id="closeButton">
+                        <span aria-hidden="true">关闭</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- 添加评论表单 -->
+                    <form id="commentForm" method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            {{ new_comment.media }}
+                            {{ new_comment.content }}
+                            <span style="color: red">{{ field.errors.0 }}</span>
+                        </div>
+                        <button type="submit" class="btn btn-primary">提交评论</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="level">
+        <div class="level-left">
+            {% if prev %}
+                <span>上一篇：</span><a href="/post/{{ prev.id }}/detail/" class="level-item">{{ prev.title }}</a>
+            {% endif %}
+        </div>
+        <div class="level-right">
+            {% if after %}
+                <span>下一篇：</span><a href="/post/{{ after.id }}/detail/" class="level-item">{{ after.title }}</a>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block js %}
+
+    <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+    <script>
+        // 点击按钮显示弹窗
+        const showModalButton = document.getElementById('showModalButton');
+        const modalContainer = document.getElementById('modalContainer');
+
+        showModalButton.addEventListener('click', function () {
+            modalContainer.style.display = 'block';
+        });
+        // 关闭按钮点击事件
+        const closeButton = document.getElementById('closeButton');
+        closeButton.addEventListener('click', function () {
+            modalContainer.style.display = 'none';
+        });
+
+        // 提交评论按钮点击事件
+        const submitCommentButton = document.getElementById('submitCommentButton');
+        submitCommentButton.addEventListener('click', function () {
+            // 当评论表单被提交时，通过AJAX发送POST请求
+            $("#commentForm").submit(function (event) {
+                event.preventDefault();
+                const form = $(this);
+                $.ajax({
+                    type: "POST",
+                    url: form.attr("action"),
+                    data: form.serialize(),
+                    success: function (response) {
+                        // 这里可以根据后端的返回结果进行处理，比如刷新评论列表等
+                        console.log("评论提交成功");
+                    }
+                });
+            });
+        });
+    </script>
+
+{% endblock %}
+
+
+
